@@ -1,25 +1,19 @@
+using TuxfamilyScraper.Library.Services;
+using TuxfamilyScraper.Library.Settings;
+using TuxfamilyScraper.Library.SimpleAPI;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.Configure<TuxfamilyDatabaseSettings>(builder.Configuration.GetSection("TuxfamilyDatabaseSettings"));
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.ConfigureHangfireServices();
+
+builder.Services.AddEndpointDefinitions(typeof(IEndpointDefinition));
 
 var app = builder.Build();
+app.MapGet("/", () => "Godot Tuxfamily Mirror Scraper!");
+app.UseEndpointDefinitions();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseHangfireDashboard();
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+app.Run("http://localhost:7010");
