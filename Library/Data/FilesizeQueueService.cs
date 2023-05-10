@@ -25,5 +25,7 @@ public class FilesizeQueueService : IFilesizeQueueService
 
     public async Task<int> Count() => (int)await _filesizeQueue.CountDocumentsAsync(_ => true);
 
+    public async Task Update(FilesizeQueue item) => await _filesizeQueue.ReplaceOneAsync(fsq => fsq.Id == item.Id, item);
+
     public async Task Remove(ObjectId id) => await _filesizeQueue.DeleteOneAsync(m => m.Id == id);
 }

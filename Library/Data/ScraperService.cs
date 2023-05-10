@@ -332,6 +332,10 @@ public class ScraperService : IScraperService
         {
             await _filesizeQueue.BulkCreate(_foundUrls);
             _logger.LogInformation($"Queued {_foundUrls.Count} new URLs to filesize scrape.");
+        }
+
+        if (await _filesizeQueue.Count() > 0)
+        {
             BackgroundJob.Schedule(
                 () => _fileSizeScraper.ScrapeFileSizes(),
                 TimeSpan.FromMinutes(2));

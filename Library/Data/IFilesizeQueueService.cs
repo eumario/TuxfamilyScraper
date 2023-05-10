@@ -9,5 +9,6 @@ public interface IFilesizeQueueService
     Task BulkCreate(List<FilesizeQueue> queues);
     Task<List<FilesizeQueue>> GetAll();
     Task<int> Count();
+    Task Update(FilesizeQueue queue);
     Task Remove(ObjectId id);
 }

@@ -8,6 +8,7 @@ public class FilesizeQueue
     public TuxfamilyVersion Version { get; set; }
     public List<string> ClassLocation { get; set; }
     public string Url { get; set; }
+    public int Size { get; set; }
     
     // ClassLocation Values:
     // {"Standard","Win32"}, {"Standard","Win64"}, {"Standard", "Linux32"}, {"Standard", "Linux64"}
