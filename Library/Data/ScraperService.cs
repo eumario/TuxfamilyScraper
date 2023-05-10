@@ -338,7 +338,7 @@ public class ScraperService : IScraperService
         {
             BackgroundJob.Schedule(
                 () => _fileSizeScraper.ScrapeFileSizes(),
-                TimeSpan.FromMinutes(2));
+                TimeSpan.FromMinutes(1));
             _logger.LogInformation("Scheduled Filesize Scrape run.");
         }
 

@@ -9,7 +9,7 @@ public class FileSizeScraperService : IFileSizeScraperService
     private readonly IFilesizeQueueService _filesizeQueue;
     private readonly ILogger _logger;
     private readonly HttpClient _client;
-    private SemaphoreSlim _semaphore;
+    private readonly SemaphoreSlim _semaphore;
 
     public FileSizeScraperService(ITuxfamilyVersionService versionService, IFilesizeQueueService filesizeQueue,
         ILogger<FileSizeScraperService> logger)
@@ -53,22 +53,6 @@ public class FileSizeScraperService : IFileSizeScraperService
         {
             _semaphore.Release();
         }
-        // var client = new HttpClient();
-        // var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-        // client.Dispose();
-        // if (!response.IsSuccessStatusCode)
-        // {
-        //     _logger.LogInformation($"Failed with status {response.StatusCode} for url: {url}");
-        //     return 0;
-        // }
-        //
-        // if (response.Content.Headers.ContentLength is null)
-        // {
-        //     _logger.LogInformation($"Failed to fetch size information for url: {url}");
-        //     return 0;
-        // }
-        // //_logger.LogInformation($"Successfully fetched size {response.Content.Headers.ContentLength} for {url}");
-        // return (int)response.Content.Headers.ContentLength;
     }
     
     public async Task ScrapeFileSizes()
@@ -126,26 +110,13 @@ public class FileSizeScraperService : IFileSizeScraperService
             await _filesizeQueue.BulkRemove(remove);
         }
 
-        // foreach (var item in await _filesizeQueue.GetAll())
-        // {
-        //     if (item.Size == 0) continue;
-        //     var version = await _versionService.Get(item.Version.Id);
-        //     var vurl = item.ClassLocation.Count == 2
-        //         ? version[item.ClassLocation[0], item.ClassLocation[1]]
-        //         : version[item.ClassLocation[0]];
-        //     if (vurl is null) continue;
-        //     vurl.Size = item.Size;
-        //     await _versionService.Update(version.Id, version);
-        //     await _filesizeQueue.Remove(item.Id);
-        // }
-
         var ncount = await _filesizeQueue.Count();
         _logger.LogInformation($"Filesize Scraping completed.  Found {count - ncount} out of {count} filesize information.");
         if (ncount > 0)
         {
             BackgroundJob.Schedule(
                 () => ScrapeFileSizes(),
-                TimeSpan.FromMinutes(2));
+                TimeSpan.FromMinutes(1));
             _logger.LogInformation("Re-Scheduled Filesize Scrape run.");
         }
     }
