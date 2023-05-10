@@ -106,18 +106,38 @@ public class FileSizeScraperService : IFileSizeScraperService
             Thread.Sleep(500);
         }
 
-        foreach (var item in await _filesizeQueue.GetAll())
+        foreach (var version in await _versionService.Get())
         {
-            if (item.Size == 0) continue;
-            var version = await _versionService.Get(item.Version.Id);
-            var vurl = item.ClassLocation.Count == 2
-                ? version[item.ClassLocation[0], item.ClassLocation[1]]
-                : version[item.ClassLocation[0]];
-            if (vurl is null) continue;
-            vurl.Size = item.Size;
+            var sizes = await _filesizeQueue.GetByVersion(version);
+            var remove = new List<FilesizeQueue>();
+            if (sizes.Count == 0) continue;
+            foreach (var item in sizes)
+            {
+                if (item.Size == 0) continue;
+                var vurl = item.ClassLocation.Count == 2
+                    ? version[item.ClassLocation[0], item.ClassLocation[1]]
+                    : version[item.ClassLocation[0]];
+                if (vurl is null) continue;
+                vurl.Size = item.Size;
+                remove.Add(item);
+            }
+
             await _versionService.Update(version.Id, version);
-            await _filesizeQueue.Remove(item.Id);
+            await _filesizeQueue.BulkRemove(remove);
         }
+
+        // foreach (var item in await _filesizeQueue.GetAll())
+        // {
+        //     if (item.Size == 0) continue;
+        //     var version = await _versionService.Get(item.Version.Id);
+        //     var vurl = item.ClassLocation.Count == 2
+        //         ? version[item.ClassLocation[0], item.ClassLocation[1]]
+        //         : version[item.ClassLocation[0]];
+        //     if (vurl is null) continue;
+        //     vurl.Size = item.Size;
+        //     await _versionService.Update(version.Id, version);
+        //     await _filesizeQueue.Remove(item.Id);
+        // }
 
         var ncount = await _filesizeQueue.Count();
         _logger.LogInformation($"Filesize Scraping completed.  Found {count - ncount} out of {count} filesize information.");
