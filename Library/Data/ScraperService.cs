@@ -12,10 +12,13 @@ namespace TuxfamilyScraper.Library.Data;
 public class ScraperService : IScraperService
 {
     private readonly ITuxfamilyVersionService _versionService;
+    private readonly IFilesizeQueueService _filesizeQueue;
     private readonly IFileSizeScraperService _fileSizeScraper;
     private readonly ILogger _logger;
     private readonly Regex _versionMatch = new Regex(@"\d+(?:\.\d+)+");
     private const string Url = "https://downloads.tuxfamily.org/godotengine/";
+
+    private List<FilesizeQueue> _foundUrls = new List<FilesizeQueue>();
 
     private readonly string[] _linux32 = new[]
     {
@@ -70,11 +73,12 @@ public class ScraperService : IScraperService
         "rc", "alpha", "beta", "dev",
     };
 
-    public ScraperService(ITuxfamilyVersionService versionService, IFileSizeScraperService fileSizeScraper,
-        ILogger<ScraperService> logger)
+    public ScraperService(ITuxfamilyVersionService versionService, IFilesizeQueueService filesizeQueue,
+        IFileSizeScraperService fileSizeScraper, ILogger<ScraperService> logger)
     {
         _versionService = versionService;
         _fileSizeScraper = fileSizeScraper;
+        _filesizeQueue = filesizeQueue;
         _logger = logger;
     }
 
@@ -111,12 +115,12 @@ public class ScraperService : IScraperService
         return urls;
     }
 
-    private void GatherZips(string url, VersionUrls urls)
+    private void GatherZips(string url, TuxfamilyVersion version, VersionUrls urls)
     {
-        GatherZips(new HtmlWeb().Load(url), url, urls);
+        GatherZips(new HtmlWeb().Load(url), url, version, urls);
     }
     
-    private void GatherZips(HtmlDocument doc, string url, VersionUrls urls)
+    private void GatherZips(HtmlDocument doc, string url, TuxfamilyVersion version, VersionUrls urls)
     {
         var uri = new Uri(url);
 
@@ -131,16 +135,44 @@ public class ScraperService : IScraperService
 
         foreach (var zip in zips)
         {
+            var fsQueue = new FilesizeQueue
+            {
+                Version = version,
+                ClassLocation = new List<string> { url.Contains("mono") ? "CSharp" : "Standard" }
+            };
+
             if (_macOS.Any(x => zip.Contains(x)))
-                urls.OSX.Url = uri.Append(zip).AbsoluteUri;
+            {
+                urls.OSX.Url = fsQueue.Url = uri.Append(zip).AbsoluteUri;
+                fsQueue.ClassLocation.Add("OSX");
+            }
+
             if (_linux32.Any(x => zip.Contains(x)))
-                urls.Linux32.Url = uri.Append(zip).AbsoluteUri;
+            {
+                urls.Linux32.Url = fsQueue.Url = uri.Append(zip).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Linux32");
+            }
+
             if (_linux64.Any(x => zip.Contains(x)))
-                urls.Linux64.Url = uri.Append(zip).AbsoluteUri;
+            {
+                urls.Linux64.Url = fsQueue.Url =  uri.Append(zip).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Linux64");
+            }
+
             if (_windows32.Any(x => zip.Contains(x)))
-                urls.Win32.Url = uri.Append(zip).AbsoluteUri;
+            {
+                urls.Win32.Url = fsQueue.Url =  uri.Append(zip).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Win32");
+            }
+
             if (_windows64.Any(x => zip.Contains(x)))
-                urls.Win64.Url = uri.Append(zip).AbsoluteUri;
+            {
+                urls.Win64.Url = fsQueue.Url =  uri.Append(zip).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Win64");
+            }
+
+            if (!string.IsNullOrEmpty(fsQueue.Url))
+                _foundUrls.Add(fsQueue);
         }
 
         if (links is null)
@@ -148,12 +180,31 @@ public class ScraperService : IScraperService
         
         foreach (var link in links)
         {
+            var fsQueue = new FilesizeQueue
+            {
+                Version = version,
+                ClassLocation = new List<string> { url.Contains("mono") ? "CSharp" : "Standard" }
+            };
             if (link.InnerText.EndsWith(_templates))
-                urls.Templates.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                urls.Templates.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Templates");
+            }
+
             if (_headless.Any(x => link.InnerText.Contains(x)))
-                urls.Headless.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                urls.Headless.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Headless");
+            }
+
             if (_server.Any(x => link.InnerText.Contains(x)))
-                urls.Server.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                urls.Server.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Server");
+            }
+
+            if (!string.IsNullOrEmpty(fsQueue.Url))
+                _foundUrls.Add(fsQueue);
         }
     }
 
@@ -178,23 +229,46 @@ public class ScraperService : IScraperService
             AndroidEditor = new VersionUrl(),
         };
         
-        GatherZips(doc, baseUrl, tfVersion.Standard);
+        GatherZips(doc, baseUrl, tfVersion, tfVersion.Standard);
         if (string.IsNullOrEmpty(tfVersion.Standard.Win64.Url)) return null;
         
         var links = doc.DocumentNode.SelectNodes("//tr/td/a");
         if (links.Select(x => x.InnerText == "mono").ToList().Count > 0)
-            GatherZips(new Uri(baseUrl).Append("mono").AbsoluteUri, tfVersion.CSharp);
+            GatherZips(new Uri(baseUrl).Append("mono").AbsoluteUri, tfVersion, tfVersion.CSharp);
         var uri = new Uri(baseUrl);
         foreach (var link in links)
         {
+            var fsQueue = new FilesizeQueue
+            {
+                Version = tfVersion,
+                ClassLocation = new List<string>()
+            };
             if (link.InnerText.Contains(_android))
-                tfVersion.AndroidEditor.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                tfVersion.AndroidEditor.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("AndroidEditor");
+            }
+
             if (link.InnerText.EndsWith(_source))
-                tfVersion.Source.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                tfVersion.Source.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Source");
+            }
+
             if (link.InnerText.Contains(_androidLibs))
-                tfVersion.AndroidLibs.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                tfVersion.AndroidLibs.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("AndroidLibs");
+            }
+
             if (link.InnerText.Contains(_sha512))
-                tfVersion.Sha512Sums.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+            {
+                tfVersion.Sha512Sums.Url = fsQueue.Url = uri.Append(link.Attributes["href"].Value).AbsoluteUri;
+                fsQueue.ClassLocation.Add("Sha512Sums");
+            }
+            
+            if (!string.IsNullOrEmpty(fsQueue.Url))
+                _foundUrls.Add(fsQueue);
         }
         return tfVersion;
     }
@@ -254,9 +328,15 @@ public class ScraperService : IScraperService
             _logger.LogInformation($"Found {foundVersions.Count} new versions, and added to database.");
         }
 
-        BackgroundJob.Schedule(
-            () => _fileSizeScraper.ScrapeFileSizes(),
-            TimeSpan.FromMinutes(2));
+        if (_foundUrls.Count > 0)
+        {
+            await _filesizeQueue.BulkCreate(_foundUrls);
+            _logger.LogInformation($"Queued {_foundUrls.Count} new URLs to filesize scrape.");
+            BackgroundJob.Schedule(
+                () => _fileSizeScraper.ScrapeFileSizes(),
+                TimeSpan.FromMinutes(2));
+            _logger.LogInformation("Scheduled Filesize Scrape run.");
+        }
 
         _logger.LogInformation("Finished Scrapping.");
     }

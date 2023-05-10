@@ -7,6 +7,7 @@ public class ScrapeEndpoint : IEndpointDefinition
 {
     public void DefineServices(IServiceCollection services)
     {
+        services.AddSingleton<IFilesizeQueueService, FilesizeQueueService>();
         services.AddSingleton<IScraperService, ScraperService>();
         services.AddSingleton<IFileSizeScraperService, FileSizeScraperService>();
     }

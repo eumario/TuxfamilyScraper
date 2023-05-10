@@ -19,7 +19,11 @@ public class FilesizeQueueService : IFilesizeQueueService
 
     public async Task Create(FilesizeQueue queue) => await _filesizeQueue.InsertOneAsync(queue);
 
+    public async Task BulkCreate(List<FilesizeQueue> queues) => await _filesizeQueue.InsertManyAsync(queues);
+
     public async Task<List<FilesizeQueue>> GetAll() => await _filesizeQueue.Find(_ => true).ToListAsync();
+
+    public async Task<int> Count() => (int)await _filesizeQueue.CountDocumentsAsync(_ => true);
 
     public async Task Remove(ObjectId id) => await _filesizeQueue.DeleteOneAsync(m => m.Id == id);
 }

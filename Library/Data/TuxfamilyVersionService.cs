@@ -43,6 +43,9 @@ public class TuxfamilyVersionService : ITuxfamilyVersionService
         await _versions.ReplaceOneAsync(m => m.Id == objId, version);
     }
 
+    public async Task Update(ObjectId id, TuxfamilyVersion version) =>
+        await _versions.ReplaceOneAsync(m => m.Id == id, version);
+
     public async Task Remove(string id)
     {
         var objId = new ObjectId(id);

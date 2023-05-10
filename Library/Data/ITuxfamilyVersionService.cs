@@ -13,5 +13,6 @@ public interface ITuxfamilyVersionService
     Task Create(TuxfamilyVersion version);
     Task BulkCreate(List<TuxfamilyVersion> versions);
     Task Update(string id, TuxfamilyVersion version);
+    Task Update(ObjectId id, TuxfamilyVersion version);
     Task Remove(string id);
 }
