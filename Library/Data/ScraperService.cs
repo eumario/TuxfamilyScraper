@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Hangfire;
 using HtmlAgilityPack;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
@@ -11,7 +12,7 @@ namespace TuxfamilyScraper.Library.Data;
 public class ScraperService : IScraperService
 {
     private readonly ITuxfamilyVersionService _versionService;
-    //private readonly IFileSizeScraperService _fileSizeScraper;
+    private readonly IFileSizeScraperService _fileSizeScraper;
     private readonly ILogger _logger;
     private readonly Regex _versionMatch = new Regex(@"\d+(?:\.\d+)+");
     private const string Url = "https://downloads.tuxfamily.org/godotengine/";
@@ -69,11 +70,11 @@ public class ScraperService : IScraperService
         "rc", "alpha", "beta", "dev",
     };
 
-    public ScraperService(ITuxfamilyVersionService versionService, // IFileSizeScraperService fileSizeScraper,
+    public ScraperService(ITuxfamilyVersionService versionService, IFileSizeScraperService fileSizeScraper,
         ILogger<ScraperService> logger)
     {
         _versionService = versionService;
-        // _fileSizeScraper = fileSizeScraper;
+        _fileSizeScraper = fileSizeScraper;
         _logger = logger;
     }
 
@@ -252,6 +253,10 @@ public class ScraperService : IScraperService
             await _versionService.BulkCreate(foundVersions);
             _logger.LogInformation($"Found {foundVersions.Count} new versions, and added to database.");
         }
+
+        BackgroundJob.Schedule(
+            () => _fileSizeScraper.ScrapeFileSizes(),
+            TimeSpan.FromMinutes(2));
 
         _logger.LogInformation("Finished Scrapping.");
     }
