@@ -12,5 +12,21 @@ public class TuxfamilyVersion
     public VersionUrl Source { get; set; }
     public VersionUrl AndroidEditor { get; set; }
     public VersionUrl AndroidLibs { get; set; }
-    public string ReleaseStage { get; set; } 
+    public string ReleaseStage { get; set; }
+
+    public VersionUrl? this[string key] => key switch
+    {
+        "Sha512Sums" => Sha512Sums,
+        "Source" => Source,
+        "AndroidEditor" => AndroidEditor,
+        "AndroidLibs" => AndroidLibs,
+        _ => null
+    };
+
+    public VersionUrl? this[string key, string subkey] => key switch
+    {
+        "Standard" => Standard[subkey],
+        "CSharp" => CSharp[subkey],
+        _ => null
+    };
 }
