@@ -8,4 +8,5 @@ public class TuxfamilyDatabaseSettings
     public string DatabaseName { get; set; }
     public string VersionCollectionName { get; set; }
     public string LatestVersionCollectionName { get; set; }
+    public string FilesizeQueueCollectionName { get; set; }
 }
