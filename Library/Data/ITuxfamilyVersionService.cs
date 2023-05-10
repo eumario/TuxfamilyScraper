@@ -7,6 +7,7 @@ public interface ITuxfamilyVersionService
 {
     Task<List<TuxfamilyVersion>> Get();
     Task<TuxfamilyVersion> Get(string id);
+    Task<TuxfamilyVersion> Get(ObjectId id);
     Task<List<TuxfamilyVersion>> GetByTag(string tag);
     Task<TuxfamilyVersion> GetByVersion(string version, string release);
     Task Create(TuxfamilyVersion version);

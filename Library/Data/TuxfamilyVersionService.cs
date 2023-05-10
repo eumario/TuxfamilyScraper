@@ -25,6 +25,9 @@ public class TuxfamilyVersionService : ITuxfamilyVersionService
         return await _versions.Find(ver => ver.Id == objId).FirstOrDefaultAsync();
     }
 
+    public async Task<TuxfamilyVersion> Get(ObjectId id) => 
+        await _versions.Find(ver => ver.Id == id).FirstOrDefaultAsync();
+
     public async Task<List<TuxfamilyVersion>> GetByTag(string tag) =>
         await _versions.Find(ver => ver.ReleaseStage == tag).ToListAsync();
 
