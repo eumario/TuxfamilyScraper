@@ -8,6 +8,7 @@ public class ScrapeEndpoint : IEndpointDefinition
     public void DefineServices(IServiceCollection services)
     {
         services.AddSingleton<IScraperService, ScraperService>();
+        services.AddSingleton<IFileSizeScraperService, FileSizeScraperService>();
     }
 
     public void DefineEndpoints(WebApplication app)
