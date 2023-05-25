@@ -11,4 +11,5 @@ public class TuxfamilyDatabaseSettings
     public string FilesizeQueueCollectionName { get; set; }
     public string AdminCollectionName { get; set; }
     public string IgnoreReleaseCollectionName { get; set; }
+    public string AdminPassword { get; set; }
 }
