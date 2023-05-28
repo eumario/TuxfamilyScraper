@@ -1,4 +1,5 @@
 using TuxfamilyScraper.Library.Data;
+using TuxfamilyScraper.Library.Models;
 using TuxfamilyScraper.Library.SimpleAPI;
 
 namespace TuxfamilyScraper.Library.Endpoints;
