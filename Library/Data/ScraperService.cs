@@ -14,6 +14,7 @@ public class ScraperService : IScraperService
     private readonly ITuxfamilyVersionService _versionService;
     private readonly IFilesizeQueueService _filesizeQueue;
     private readonly IFileSizeScraperService _fileSizeScraper;
+    private readonly IIgnoreReleaseService _ignoreRelease;
     private readonly ILogger _logger;
     private readonly Regex _versionMatch = new Regex(@"\d+(?:\.\d+)+");
     private const string Url = "https://downloads.tuxfamily.org/godotengine/";
@@ -74,11 +75,12 @@ public class ScraperService : IScraperService
     };
 
     public ScraperService(ITuxfamilyVersionService versionService, IFilesizeQueueService filesizeQueue,
-        IFileSizeScraperService fileSizeScraper, ILogger<ScraperService> logger)
+        IFileSizeScraperService fileSizeScraper, IIgnoreReleaseService ignoreRelease, ILogger<ScraperService> logger)
     {
         _versionService = versionService;
         _fileSizeScraper = fileSizeScraper;
         _filesizeQueue = filesizeQueue;
+        _ignoreRelease = ignoreRelease;
         _logger = logger;
     }
 
@@ -90,7 +92,7 @@ public class ScraperService : IScraperService
         return res.Result is not null;
     }
 
-    private Dictionary<string, string>? GatherVersions()
+    private async Task<Dictionary<string, string>?> GatherVersions()
     {
         Dictionary<string, string> urls = new Dictionary<string, string>();
         var web = new HtmlWeb();
@@ -108,7 +110,9 @@ public class ScraperService : IScraperService
 
         foreach (var link in found)
         {
-            _logger.LogInformation($"Found Version: {link.InnerText} [HREF: {link.Value}]");
+            var ignoredReleases = await _ignoreRelease.GetAll();
+            var ignoreFound = await _ignoreRelease.HasRelease(link.InnerText);
+            if (ignoreFound) continue;
             urls[link.InnerText] = link.Value;
         }
 
@@ -208,12 +212,7 @@ public class ScraperService : IScraperService
         }
     }
 
-    private TuxfamilyVersion? ProcessRelease(string baseUrl, string version, string release)
-    {
-        return ProcessRelease(new HtmlWeb().Load(baseUrl), baseUrl, version, release);
-    }
-
-    private TuxfamilyVersion? ProcessRelease(HtmlDocument doc, string baseUrl, string version, string release)
+    private TuxfamilyVersion? ProcessRelease(string baseUrl, string version, string release, HtmlDocument? doc = null)
     {
         if (IsVersionStored(version, release)) return null;
         
@@ -228,7 +227,9 @@ public class ScraperService : IScraperService
             AndroidLibs = new VersionUrl(),
             AndroidEditor = new VersionUrl(),
         };
-        
+
+        doc ??= new HtmlWeb().Load(baseUrl);
+
         GatherZips(doc, baseUrl, tfVersion, tfVersion.Standard);
         if (string.IsNullOrEmpty(tfVersion.Standard.Win64.Url)) return null;
         
@@ -280,7 +281,7 @@ public class ScraperService : IScraperService
         var uri = new Uri(baseUrl);
         var doc = web.Load(uri);
 
-        var tfVersion = ProcessRelease(doc, baseUrl, version, release);
+        var tfVersion = ProcessRelease(baseUrl, version, release, doc);
         if (tfVersion is not null)
             versions.Add(tfVersion);
 
@@ -305,7 +306,7 @@ public class ScraperService : IScraperService
     public async Task ScrapeSite()
     {
         _logger.LogInformation("Starting scraping...");
-        var urls = GatherVersions();
+        var urls = await GatherVersions();
         var versions = new List<TuxfamilyVersion>();
         if (urls is null)
         {
@@ -314,12 +315,14 @@ public class ScraperService : IScraperService
         }
 
         var foundVersions = new List<TuxfamilyVersion>();
+        
+        _logger.LogInformation($"Processing {urls.Count} urls not ignored...");
 
         foreach (var processedVersions in 
                  urls.Keys.Select(version =>
-                     ProcessUrls(new Uri(Url).Append(version).AbsoluteUri, version))
+                         ProcessUrls(new Uri(Url).Append(version).AbsoluteUri, version))
                      .Where(processedVersions => processedVersions.Count > 0)
-                 )
+                )
             foundVersions.AddRange(processedVersions);
 
         if (foundVersions.Count > 0)
