@@ -14,7 +14,7 @@ public class IgnoreReleaseService : IIgnoreReleaseService
     {
         var mongoClient = new MongoClient(options.Value.ConnectionString);
         _ignoreRelease = mongoClient.GetDatabase(options.Value.DatabaseName)
-            .GetCollection<IgnoreRelease>(options.Value.VersionCollectionName);
+            .GetCollection<IgnoreRelease>(options.Value.IgnoreReleaseCollectionName);
     }
 
     public async Task<List<IgnoreRelease>> GetAll() => await _ignoreRelease.Find(_ => true).ToListAsync();
