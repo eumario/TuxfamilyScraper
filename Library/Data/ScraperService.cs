@@ -15,6 +15,7 @@ public class ScraperService : IScraperService
     private readonly IFilesizeQueueService _filesizeQueue;
     private readonly IFileSizeScraperService _fileSizeScraper;
     private readonly IIgnoreReleaseService _ignoreRelease;
+    private readonly ILatestScraper _latestScraper;
     private readonly ILogger _logger;
     private readonly Regex _versionMatch = new Regex(@"\d+(?:\.\d+)+");
     private const string Url = "https://downloads.tuxfamily.org/godotengine/";
@@ -75,12 +76,14 @@ public class ScraperService : IScraperService
     };
 
     public ScraperService(ITuxfamilyVersionService versionService, IFilesizeQueueService filesizeQueue,
-        IFileSizeScraperService fileSizeScraper, IIgnoreReleaseService ignoreRelease, ILogger<ScraperService> logger)
+        IFileSizeScraperService fileSizeScraper, IIgnoreReleaseService ignoreRelease,
+        ILatestScraper latestScraper, ILogger<ScraperService> logger)
     {
         _versionService = versionService;
         _fileSizeScraper = fileSizeScraper;
         _filesizeQueue = filesizeQueue;
         _ignoreRelease = ignoreRelease;
+        _latestScraper = latestScraper;
         _logger = logger;
     }
 
@@ -343,6 +346,9 @@ public class ScraperService : IScraperService
                 () => _fileSizeScraper.ScrapeFileSizes(),
                 TimeSpan.FromMinutes(1));
             _logger.LogInformation("Scheduled Filesize Scrape run.");
+            BackgroundJob.Schedule(
+                () => _latestScraper.ScrapeLatest(),
+                TimeSpan.FromMinutes(1));
         }
 
         _logger.LogInformation("Finished Scrapping.");

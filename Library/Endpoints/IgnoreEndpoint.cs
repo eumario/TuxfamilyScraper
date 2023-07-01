@@ -16,7 +16,7 @@ public class IgnoreEndpoint : IEndpointDefinition
 
     public void DefineEndpoints(WebApplication app)
     {
-        app.MapGet("/ignoreRelease/{releaseId}/{password}", AddIgnoreRelease);
+        //app.MapGet("/ignoreRelease/{releaseId}/{password}", AddIgnoreRelease);
     }
 
     internal IResult AddIgnoreRelease(IAdminPassword adminPassword, IIgnoreReleaseService ignoreRelease, string releaseId, string password)
