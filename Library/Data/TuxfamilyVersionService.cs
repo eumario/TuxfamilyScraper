@@ -21,12 +21,11 @@ public class TuxfamilyVersionService : ITuxfamilyVersionService
 
     public async Task<TuxfamilyVersion> Get(string id)
     {
-        var objId = new ObjectId(id);
-        return await _versions.Find(ver => ver.Id == objId).FirstOrDefaultAsync();
+        return await _versions.Find(ver => ver.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<TuxfamilyVersion> Get(ObjectId id) => 
-        await _versions.Find(ver => ver.Id == id).FirstOrDefaultAsync();
+        await _versions.Find(ver => ver.Id == id.ToString()).FirstOrDefaultAsync();
 
     public async Task<List<TuxfamilyVersion>> GetByTag(string tag) =>
         await _versions.Find(ver => ver.ReleaseStage == tag).ToListAsync();
@@ -39,16 +38,14 @@ public class TuxfamilyVersionService : ITuxfamilyVersionService
 
     public async Task Update(string id, TuxfamilyVersion version)
     {
-        var objId = new ObjectId(id);
-        await _versions.ReplaceOneAsync(m => m.Id == objId, version);
+        await _versions.ReplaceOneAsync(m => m.Id == id, version);
     }
 
     public async Task Update(ObjectId id, TuxfamilyVersion version) =>
-        await _versions.ReplaceOneAsync(m => m.Id == id, version);
+        await _versions.ReplaceOneAsync(m => m.Id == id.ToString(), version);
 
     public async Task Remove(string id)
     {
-        var objId = new ObjectId(id);
-        await _versions.DeleteOneAsync(m => m.Id == objId);
+        await _versions.DeleteOneAsync(m => m.Id == id);
     }
 }

@@ -1,11 +1,16 @@
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace TuxfamilyScraper.Library.Models;
 
 public class LatestRelease
 {
-    public ObjectId Id;
-    public int Major;
-    public ObjectId Release;
-    public ObjectId Prerelease;
+    [BsonId]
+    [BsonRepresentation((BsonType.ObjectId))]
+    public string? Id { get; set; }
+    public int Major { get; set; }
+    [BsonRepresentation((BsonType.ObjectId))]
+    public string? Release { get; set; }
+    [BsonRepresentation((BsonType.ObjectId))]
+    public string? Prerelease { get; set; }
 }

@@ -1,3 +1,4 @@
+using MongoDB.Bson;
 using TuxfamilyScraper.Library.Data;
 using TuxfamilyScraper.Library.SimpleAPI;
 

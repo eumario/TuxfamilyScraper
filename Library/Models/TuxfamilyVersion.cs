@@ -1,10 +1,13 @@
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace TuxfamilyScraper.Library.Models;
 
 public class TuxfamilyVersion
 {
-    public ObjectId Id { get; set; }
+    [BsonId]
+    [BsonRepresentation((BsonType.ObjectId))]
+    public string? Id { get; set; }
     public string TagName { get; set; }
     public VersionUrls Standard { get; set; }
     public VersionUrls CSharp { get; set; }
