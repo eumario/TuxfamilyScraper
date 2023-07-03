@@ -7,12 +7,12 @@ public interface ITuxfamilyVersionService
 {
     Task<List<TuxfamilyVersion>> Get();
     Task<TuxfamilyVersion> Get(string id);
-    Task<TuxfamilyVersion> Get(ObjectId id);
+    Task<TuxfamilyVersion> Get(Guid id);
     Task<List<TuxfamilyVersion>> GetByTag(string tag);
     Task<TuxfamilyVersion> GetByVersion(string version, string release);
     Task Create(TuxfamilyVersion version);
     Task BulkCreate(List<TuxfamilyVersion> versions);
     Task Update(string id, TuxfamilyVersion version);
-    Task Update(ObjectId id, TuxfamilyVersion version);
+    Task Update(Guid id, TuxfamilyVersion version);
     Task Remove(string id);
 }

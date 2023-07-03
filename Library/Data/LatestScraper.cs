@@ -46,12 +46,12 @@ public class LatestScraper : ILatestScraper
 
                 switch (semvers.IsPrerelease)
                 {
-                    case true when major.Prerelease == ObjectId.Empty.ToString():
+                    case true when major.Prerelease == Guid.Empty:
                         major.Prerelease = version.Id;
                         _logger.LogInformation($"New Pre-Release Found: {version.TagName}-{version.ReleaseStage}");
                         await _latestRelease.Update(major);
                         continue;
-                    case false when major.Release == ObjectId.Empty.ToString():
+                    case false when major.Release == Guid.Empty:
                         major.Release = version.Id;
                         _logger.LogInformation($"New Stable Release Found: {version.TagName}");
                         await _latestRelease.Update(major);
@@ -84,8 +84,8 @@ public class LatestScraper : ILatestScraper
                 var major = new LatestRelease()
                 {
                     Major = semvers.Major,
-                    Release = !semvers.IsPrerelease ? version.Id.ToString() : ObjectId.Empty.ToString(),
-                    Prerelease = semvers.IsPrerelease ? version.Id.ToString() : ObjectId.Empty.ToString()
+                    Release = !semvers.IsPrerelease ? version.Id : Guid.Empty,
+                    Prerelease = semvers.IsPrerelease ? version.Id : Guid.Empty
                 };
                 await _latestRelease.Add(major);
             }

@@ -6,11 +6,8 @@ namespace TuxfamilyScraper.Library.Models;
 public class LatestRelease
 {
     [BsonId]
-    [BsonRepresentation((BsonType.ObjectId))]
-    public string? Id { get; set; }
+    public Guid Id { get; set; }
     public int Major { get; set; }
-    [BsonRepresentation((BsonType.ObjectId))]
-    public string? Release { get; set; }
-    [BsonRepresentation((BsonType.ObjectId))]
-    public string? Prerelease { get; set; }
+    public Guid Release { get; set; }
+    public Guid Prerelease { get; set; }
 }

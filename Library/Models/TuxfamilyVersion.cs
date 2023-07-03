@@ -6,8 +6,7 @@ namespace TuxfamilyScraper.Library.Models;
 public class TuxfamilyVersion
 {
     [BsonId]
-    [BsonRepresentation((BsonType.ObjectId))]
-    public string? Id { get; set; }
+    public Guid Id { get; set; }
     public string TagName { get; set; }
     public VersionUrls Standard { get; set; }
     public VersionUrls CSharp { get; set; }
